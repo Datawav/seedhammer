@@ -96,7 +96,7 @@ against the screen, then destroy the paper.
 ## On the machine
 
 1. The start screen reads **Backup Wallet**. Press the checkmark, then choose
-   **12 WORDS** or **24 WORDS** under *Choose number of words*.
+   **12 WORDS** or **24 WORDS** under *Choose what to enter*.
 2. Type your drawn words in order. Letters that cannot lead to a word go dim,
    and once the letters resolve to exactly one word a checkmark appears; press
    it to accept the word and move to the next.
