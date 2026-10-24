@@ -327,9 +327,6 @@ func TestEveryPlateIsDeclinable(t *testing.T) {
 			t.Error("skipping the seed plate did not continue to the other plates")
 		}
 	})
-	declines("passphrase plate", "ENGRAVE PASSPHRASE", func(ctx *Context) {
-		passphrasePlateFlow(ctx, &descriptorTheme, m, "hunter2", "m/84h/0h/0h", "")
-	})
 
 	// With no passphrase there is nothing to offer at all.
 	ctx := NewContext(newPlatform())
@@ -664,4 +661,57 @@ func TestTextAlphabetCoversPlainText(t *testing.T) {
 	if len(missing) > 0 {
 		t.Errorf("cannot type %d plain-text runes: %q", len(missing), string(missing))
 	}
+}
+
+func TestPassphrasePlateDefaultsToSkip(t *testing.T) {
+	m, err := bip39.ParseMnemonic(masterKeyVectors[0].mnemonic)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := newPlatform()
+	ctx := NewContext(p)
+	frame, quit := runUI(ctx, func() { passphrasePlateFlow(ctx, &descriptorTheme, m, "hunter2", "m/84h/0h/0h", "") })
+	defer quit()
+	content, drew := frame()
+	if !drew || !strings.Contains(strings.ReplaceAll(content, " ", ""), "Soundmayrevealthepassphrase.") {
+		t.Fatalf("missing acoustic warning: %q", content)
+	}
+	click(&ctx.Router, Button3)
+	if _, drew := frame(); drew {
+		t.Fatal("default confirmation did not skip passphrase engraving")
+	}
+}
+
+func TestPassphrasePlateExplicitEngrave(t *testing.T) {
+	m, err := bip39.ParseMnemonic(masterKeyVectors[0].mnemonic)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := NewContext(newPlatform())
+	frame, quit := runUI(ctx, func() { passphrasePlateFlow(ctx, &descriptorTheme, m, "hunter2", "m/84h/0h/0h", "") })
+	defer quit()
+	frame()
+	click(&ctx.Router, Up)
+	if _, drew := frame(); !drew {
+		t.Fatal("offer closed while selecting engraving")
+	}
+	click(&ctx.Router, Button3)
+	if content, drew := frame(); !drew || !strings.Contains(content, "Plate") {
+		t.Fatalf("explicit engraving did not reach plate choice: %q", content)
+	}
+}
+
+func TestPassphrasePlateWarningScreenshot(t *testing.T) {
+	if *uishotsDir == "" {
+		t.Skip("requires -uishots")
+	}
+	m, err := bip39.ParseMnemonic(masterKeyVectors[0].mnemonic)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := newPlatform()
+	p.dims = image.Pt(480, 320)
+	s := newShotUI(t, *uishotsDir, p, func(ctx *Context) { passphrasePlateFlow(ctx, &descriptorTheme, m, "hunter2", "m/84h/0h/0h", "") })
+	defer s.quit()
+	s.capture("passphrase-acoustic-warning")
 }

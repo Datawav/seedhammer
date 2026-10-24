@@ -346,13 +346,13 @@ func passphrasePlateFlow(ctx *Context, th *Colors, mnemonic bip39.Mnemonic, pass
 	if pass == "" {
 		return
 	}
-	// Engraving first, as on the seed plate: the selection lands on the
-	// answer someone who set a passphrase came here for, and declining
-	// costs a keypress instead of being what happens by default.
+	// This secret uses ordinary text paths, so engraving can disclose it
+	// through sound. Require an explicit move away from the safe default.
 	cs := &ChoiceScreen{
 		Title:   "Passphrase",
-		Lead:    "Engrave the passphrase on its own plate?",
+		Lead:    "Sound may reveal\nthe passphrase.",
 		Choices: []string{"ENGRAVE PASSPHRASE", "SKIP"},
+		choice:  1,
 	}
 	choice, ok := cs.Choose(ctx, th)
 	if !ok || choice == 1 {
