@@ -341,6 +341,17 @@ func cosignerFlow(ctx *Context, th *Colors, slots []cosignerSlot, k, n int) (cos
 			showError(ctx, th, fmt.Errorf("Already cosigner %d: the same master fingerprint %.8X.", dup+1, slot.key.MasterFingerprint), blankScreen)
 			continue
 		}
+		// Fingerprints are unauthenticated origin metadata. Check the
+		// spending expressions too before counting this key as a signer.
+		candidate := &bip380.Descriptor{Type: bip380.SortedMulti, Script: bip380.P2WSH, Threshold: 1}
+		for _, existing := range slots {
+			candidate.Keys = append(candidate.Keys, existing.key)
+		}
+		candidate.Keys = append(candidate.Keys, slot.key)
+		if err := candidate.Validate(); err != nil {
+			showError(ctx, th, errors.New("Duplicate cosigner key. The same spending key cannot count as another signer."), blankScreen)
+			continue
+		}
 		if confirmCosigner(ctx, th, slot, k, n) {
 			return slot, true
 		}
